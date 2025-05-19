@@ -9,8 +9,12 @@ import java.util.Optional;
 
 public interface ItemRepository {
     ItemDto add(ItemDto itemDto);
+
     Optional<Item> getItem(Long id);
+
     ItemDto update(ItemDto itemDto);
+
     List<ItemDto> getAllUsersItems(User user);
+
     List<ItemDto> getRequiredItems(String request);
 }
