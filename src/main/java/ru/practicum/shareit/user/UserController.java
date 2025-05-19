@@ -32,7 +32,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}")
-    public UserDto updateUser(@RequestBody UserDto userDto , @PathVariable @Positive Long id) {
+    public UserDto updateUser(@RequestBody UserDto userDto, @PathVariable @Positive Long id) {
         userDto.setId(id);
         return userService.updateUser(userDto);
     }
