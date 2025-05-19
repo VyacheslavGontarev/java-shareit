@@ -5,41 +5,38 @@ import org.springframework.stereotype.Component;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.mapper.UserMapper;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
 public class UserRepositoryImpl implements UserRepository {
-    private final List<User> users = new ArrayList<>();
+    private final Map<Long, User> users = new HashMap<Long, User>();
 
     @Override
     public List<UserDto> findAll() {
-        return users.stream()
+        return users.values().stream()
                 .map(user -> UserMapper.toUserDto(user))
                 .collect(Collectors.toList());
     }
 
     @Override
-    public UserDto findUser(Long id) {
-        return UserMapper.toUserDto(users.stream()
-                .filter(user1 -> user1.getId().equals(id))
-                .findFirst()
-                .orElseThrow(() -> new ValidationException("Пользователь с таким id не найден")));
+    public Optional<User> findUser(Long id) {
+        return Optional.ofNullable(users.get(id));
     }
 
     @Override
     public UserDto save(UserDto userDto) {
         User user = UserMapper.toUser(userDto);
         String email = user.getEmail();
-        users.stream()
+        users.values().stream()
                 .filter(user1 -> user1.getEmail().equals(email))
                 .findFirst()
                 .ifPresent(existingUser -> {
                     throw new ValidationException("Пользователь с таким email уже существует");
                 });
-        user.setId(getId());
-        users.add(user);
+        Long id = getId();
+        user.setId(id);
+        users.put(id,user);
         return UserMapper.toUserDto(user);
     }
 
@@ -51,10 +48,11 @@ public class UserRepositoryImpl implements UserRepository {
             throw new ValidationException("Id должен быть указан");
         }
         Long id = newUser.getId();
-        User oldUser = UserMapper.toUser(findUser(id));
+        User oldUser = findUser(id)
+                .orElseThrow(() -> new ValidationException("Пользователь с таким id не найден"));
         users.remove(oldUser);
         if (!oldUser.getEmail().equals(email)) {
-            users.stream()
+            users.values().stream()
                     .filter(user1 -> user1.getEmail().equals(email))
                     .findFirst()
                     .ifPresent(existingUser -> {
@@ -67,21 +65,21 @@ public class UserRepositoryImpl implements UserRepository {
         if (newUser.getEmail() != null) {
             oldUser.setEmail(newUser.getEmail());
         }
-        users.add(oldUser);
+        users.put(id,oldUser);
         return UserMapper.toUserDto(oldUser);
     }
 
     @Override
     public void delete(Long id) {
-        User user = UserMapper.toUser(findUser(id));
+        User user = findUser(id)
+                .orElseThrow(() -> new ValidationException("Пользователь с таким id не найден"));
         users.remove(user);
     }
 
     private long getId() {
-        long lastId = users.stream()
-                .mapToLong(User::getId)
-                .max()
-                .orElse(0);
+        long lastId = users.keySet().stream()
+                .max(Long::compareTo)
+                .orElse(0L);
         return lastId + 1;
     }
 }

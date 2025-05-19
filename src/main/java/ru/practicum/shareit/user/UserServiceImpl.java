@@ -1,8 +1,10 @@
 package ru.practicum.shareit.user;
 
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.mapper.UserMapper;
 
 import java.util.List;
 
@@ -18,7 +20,8 @@ class UserServiceImpl implements UserService {
 
     @Override
     public UserDto getUserById(Long id) {
-        return repository.findUser(id);
+        return UserMapper.toUserDto(repository.findUser(id)
+                .orElseThrow(() -> new ValidationException("Пользователь с таким id не найден")));
     }
 
     @Override
