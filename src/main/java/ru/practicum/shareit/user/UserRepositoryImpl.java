@@ -50,7 +50,7 @@ public class UserRepositoryImpl implements UserRepository {
         Long id = newUser.getId();
         User oldUser = findUser(id)
                 .orElseThrow(() -> new ValidationException("Пользователь с таким id не найден"));
-        users.remove(oldUser);
+        users.remove(id);
         if (!oldUser.getEmail().equals(email)) {
             users.values().stream()
                     .filter(user1 -> user1.getEmail().equals(email))
@@ -71,9 +71,7 @@ public class UserRepositoryImpl implements UserRepository {
 
     @Override
     public void delete(Long id) {
-        User user = findUser(id)
-                .orElseThrow(() -> new ValidationException("Пользователь с таким id не найден"));
-        users.remove(user);
+        users.remove(id);
     }
 
     private long getId() {

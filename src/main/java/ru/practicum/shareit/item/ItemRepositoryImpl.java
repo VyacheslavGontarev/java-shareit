@@ -78,10 +78,10 @@ public class ItemRepositoryImpl implements ItemRepository {
                 .collect(Collectors.toList());
     }
 
-    private long getId() {
+    private Long getId() {
         long lastId = items.keySet().stream()
                 .max(Long::compareTo)
                 .orElse(0L);
-        return lastId + 1;
+        return lastId + 1L;
     }
 }
