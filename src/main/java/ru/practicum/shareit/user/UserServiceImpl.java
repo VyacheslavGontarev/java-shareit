@@ -1,41 +1,65 @@
 package ru.practicum.shareit.user;
 
-import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.exception.NotFoundException;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.mapper.UserMapper;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
-class UserServiceImpl implements UserService {
+public class UserServiceImpl implements UserService {
+
+    @Qualifier("userRepository")
     private final UserRepository repository;
 
     @Override
     public List<UserDto> getAllUsers() {
-        return repository.findAll();
+        return repository.findAll()
+                .stream().map(UserMapper::toUserDto)
+                .toList();
     }
 
     @Override
     public UserDto getUserById(Long id) {
-        return UserMapper.toUserDto(repository.findUser(id)
-                .orElseThrow(() -> new ValidationException("Пользователь с таким id не найден")));
+        User user =  repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Не удалось нйти пользователя с id:" + id));
+        return UserMapper.toUserDto(user);
     }
 
     @Override
-    public UserDto saveUser(UserDto userDto) {
-        return repository.save(userDto);
+    public UserDto createUser(UserDto user) {
+        User userEntity = UserMapper.toUser(user);
+        return UserMapper.toUserDto(repository.save(userEntity));
     }
 
     @Override
-    public UserDto updateUser(UserDto userDto) {
-        return repository.update(userDto);
+    public UserDto updateUser(UserDto user) {
+        User oldUser = repository.findById(user.getId())
+                .orElseThrow(() -> new NotFoundException("Не удалось нйти пользователя с id:" + user.getId()));
+
+        if (user.getEmail() != null && !oldUser.getEmail().equals(user.getEmail())) {
+            log.trace("Изменение email пользователя");
+            oldUser.setEmail(user.getEmail());
+        }
+
+        if (user.getName() != null && !oldUser.getName().equals(user.getName())) {
+            log.trace("Изменение имя пользователя");
+            oldUser.setName(user.getName());
+        }
+
+        return UserMapper.toUserDto(repository.save(oldUser));
     }
 
     @Override
     public void deleteUser(Long id) {
-        repository.delete(id);
+        User user = repository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Не удалось нйти пользователя с id:" + id));
+        repository.delete(user);
     }
 }
